@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="movie-service" default="dist" basedir=".">
+    <description>
+        Movie Service ANT Build File
+    </description>
+
+    <!-- Global properties -->
+    <property name="src.dir" location="src/main/java"/>
+    <property name="resources.dir" location="src/main/resources"/>
+    <property name="build.dir" location="build"/>
+    <property name="dist.dir" location="dist"/>
+    <property name="lib.dir" location="lib"/>
+    <property name="test.src.dir" location="src/test/java"/>
+    <property name="test.build.dir" location="build/test"/>
+    <property name="test.reports.dir" location="test-reports"/>
+
+    <!-- Define Maven Central Repository -->
+    <property name="maven.repo.url" value="https://repo.maven.apache.org/maven2"/>
+
+    <!-- Classpath for compilation -->
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- Initialization -->
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+        <mkdir dir="${lib.dir}"/>
+        <mkdir dir="${test.build.dir}"/>
+        <mkdir dir="${test.reports.dir}"/>
+        
+        <!-- Download dependencies -->
+        <get src="${maven.repo.url}/org/springframework/boot/spring-boot-starter-web/2.0.5.RELEASE/spring-boot-starter-web-2.0.5.RELEASE.jar" 
+             dest="${lib.dir}" usetimestamp="true"/>
+        <get src="${maven.repo.url}/software/amazon/awssdk/appconfig/2.14.27/appconfig-2.14.27.jar"
+             dest="${lib.dir}" usetimestamp="true"/>
+        <get src="${maven.repo.url}/org/json/json/20200518/json-20200518.jar"
+             dest="${lib.dir}" usetimestamp="true"/>
+        <get src="${maven.repo.url}/org/apache/logging/log4j/log4j-api/2.13.3/log4j-api-2.13.3.jar"
+             dest="${lib.dir}" usetimestamp="true"/>
+        <get src="${maven.repo.url}/org/apache/logging/log4j/log4j-core/2.13.3/log4j-core-2.13.3.jar"
+             dest="${lib.dir}" usetimestamp="true"/>
+        <get src="${maven.repo.url}/javax/validation/validation-api/2.0.1.Final/validation-api-2.0.1.Final.jar"
+             dest="${lib.dir}" usetimestamp="true"/>
+        <!-- Test dependencies -->
+        <get src="${maven.repo.url}/junit/junit/4.13.1/junit-4.13.1.jar"
+             dest="${lib.dir}" usetimestamp="true"/>
+        <get src="${maven.repo.url}/org/mockito/mockito-all/1.10.19/mockito-all-1.10.19.jar"
+             dest="${lib.dir}" usetimestamp="true"/>
+    </target>
+
+    <!-- Compile -->
+    <target name="compile" depends="init">
+        <javac srcdir="${src.dir}" destdir="${build.dir}" includeantruntime="false" source="1.8" target="1.8">
+            <classpath refid="compile.classpath"/>
+        </javac>
+        <!-- Copy resources -->
+        <copy todir="${build.dir}">
+            <fileset dir="${resources.dir}"/>
+        </copy>
+    </target>
+
+    <!-- Compile Tests -->
+    <target name="compile-tests" depends="compile">
+        <javac srcdir="${test.src.dir}" destdir="${test.build.dir}" includeantruntime="false" source="1.8" target="1.8">
+            <classpath>
+                <path refid="compile.classpath"/>
+                <pathelement location="${build.dir}"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <!-- Run Tests -->
+    <target name="test" depends="compile-tests">
+        <junit printsummary="yes" haltonfailure="yes">
+            <classpath>
+                <path refid="compile.classpath"/>
+                <pathelement location="${build.dir}"/>
+                <pathelement location="${test.build.dir}"/>
+            </classpath>
+            <formatter type="plain"/>
+            <batchtest fork="yes" todir="${test.reports.dir}">
+                <fileset dir="${test.src.dir}">
+                    <include name="**/*Test*.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <!-- Create JAR -->
+    <target name="dist" depends="compile">
+        <jar jarfile="${dist.dir}/${ant.project.name}.jar" basedir="${build.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="com.amazonaws.samples.appconfig.movies.MoviesApplication"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!-- Clean -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+        <delete dir="${lib.dir}"/>
+        <delete dir="${test.reports.dir}"/>
+    </target>
+</project>

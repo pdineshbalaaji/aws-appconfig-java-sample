@@ -1,11 +1,3 @@
-id: sysout-to-logger
-language: java
-rule:
-    pattern: System.out.println($MATCH)
-fix: logger.info($MATCH)
-
---- # this is YAML doc separator to have multiple rules in one file
-
 id: update-movie-service-util-java17
 language: html
 rule:
@@ -33,3 +25,12 @@ rule:
         MovieUtils.isValidMovieName($MOVIE_NAME)
 fix: |-
     MovieUtils.isValidMovie($MOVIE_NAME, movieId)
+
+--- # this is YAML doc separator to have multiple rules in one file
+id: sysout-to-logger
+language: java
+rule:
+    pattern: System.out.println($MATCH)
+fix: logger.info($MATCH)
+
+
