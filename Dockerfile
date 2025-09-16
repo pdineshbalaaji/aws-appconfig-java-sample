@@ -1,19 +1,16 @@
-FROM maven:3.6.1-amazoncorretto-8 as build
-
-ENV MAVEN_VERSION 3.6.1
-ENV MAVEN_HOME /usr/lib/mvn
-ENV PATH $MAVEN_HOME/bin:$PATH
+FROM gradle:6.9-jdk8 as build
 
 WORKDIR /workspace/app
 
-
-COPY pom.xml .
+COPY build.gradle .
+COPY settings.gradle .
 COPY src src
-RUN mvn install -DskipTests
-RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
+COPY movie-service-utils movie-service-utils
+RUN gradle build -x test --no-daemon
+RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
 
-FROM maven:3.6.1-amazoncorretto-8
-ARG DEPENDENCY=/workspace/app/target/dependency
+FROM gradle:6.9-jdk8
+ARG DEPENDENCY=/workspace/app/build/dependency
 COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
 COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
 COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app

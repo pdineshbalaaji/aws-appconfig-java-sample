@@ -33,24 +33,24 @@ The `.github/workflows/q-code-transformation.yml` file provides:
 ### **GitLab CI Configuration**
 
 The `.gitlab-ci.yml` file provides:
-- **Intelligent Java version detection** by scanning `pom.xml` content
-- **Dynamic Maven image selection** (Java 8 or Java 17)
+- **Intelligent Java version detection** by scanning `build.gradle` content
+- **Dynamic Gradle image selection** (Java 8 or Java 17)
 - **Complete build pipeline** with compile, test, and package stages
 - **Docker containerization** with Kaniko
 - **Q Developer transformation support** with required artifacts
 
 **Pipeline Stages:**
-1. **detect-java-version**: Scans pom.xml and sets appropriate Maven image
-2. **install-dependency**: Installs first-party movie-service-utils JAR
+1. **detect-java-version**: Scans build.gradle and sets appropriate Gradle image
+2. **build-utils**: Builds the movie-service-utils module
 3. **build**: Compiles the application using detected Java version
 4. **test**: Runs unit tests with JUnit reporting
 5. **package**: Creates Docker image with version-appropriate base image
 6. **q-code-transformation**: Generates dependencies for Q Developer (pre-transformation only)
 
 **Key Features:**
-- **Pre-transformation**: Uses Java 8 with Maven 3.8 for legacy code
-- **Post-transformation**: Automatically switches to Java 17 with compatible Maven version
-- **Artifact optimization**: Prevents upload size errors while maintaining functionality
+- **Pre-transformation**: Uses Java 8 with Gradle 6.9 for legacy code
+- **Post-transformation**: Automatically switches to Java 17 with compatible Gradle version
+- **Multi-module support**: Builds both main application and utils module
 - **Q Developer compatibility**: Provides required job structure and artifacts
 
 **Branch Patterns:**
@@ -70,36 +70,21 @@ Both pipelines are designed to work seamlessly with Amazon Q Developer's code tr
 
 ## Dependencies Setup
 
-Before building the application, you need to install the movie-service-utils dependency in your local Maven repository. This utility library is available in two versions to support different Java versions:
+This project uses Gradle with a multi-module setup. The movie-service-utils dependency is automatically built and included as a project dependency. No manual installation is required.
 
-### For Java 1.8 Version
+### Building the Project
 ```bash
-mvn install:install-file \
-  -Dfile=./movie-service-utils/built-library/0_1_0/movie-service-utils-0.1.0.jar \
-  -DgroupId=com.amazonaws.samples \
-  -DartifactId=movie-service-utils \
-  -Dversion=0.1.0 \
-  -Dpackaging=jar
-```
+# Build the entire project including the utils module
+./gradlew build
 
-### For Java 17 Version
-```bash
-mvn install:install-file \
-  -Dfile=./movie-service-utils/built-library/0_2_0/movie-service-utils-0.2.0.jar \
-  -DgroupId=com.amazonaws.samples \
-  -DartifactId=movie-service-utils \
-  -Dversion=0.2.0 \
-  -Dpackaging=jar
-```
+# Build only the utils module
+./gradlew :movie-service-utils:build
 
-### For Java 21 Version
-```bash
-mvn install:install-file \
-  -Dfile=./movie-service-utils/built-library/0_3_0/movie-service-utils-0.3.0.jar \
-  -DgroupId=com.amazonaws.samples \
-  -DartifactId=movie-service-utils \
-  -Dversion=0.3.0 \
-  -Dpackaging=jar
+# Run tests
+./gradlew test
+
+# Clean and build
+./gradlew clean build
 ```
 
 ## **Local**
@@ -204,34 +189,19 @@ This application has a Caching layer built in to cache the responses from AWS Ap
 
 ## **Installation Instructions**
 
-### For Java 1.8 Version
+### Building with Gradle
 ```bash
-mvn install:install-file \
-  -Dfile=./movie-service-utils/built-library/0_1_0/movie-service-utils-0.1.0.jar \
-  -DgroupId=com.amazonaws.samples \
-  -DartifactId=movie-service-utils \
-  -Dversion=0.1.0 \
-  -Dpackaging=jar
-```
+# Build the entire project (includes movie-service-utils automatically)
+./gradlew build
 
-### For Java 17 Version
-```bash
-mvn install:install-file \
-  -Dfile=./movie-service-utils/built-library/0_2_0/movie-service-utils-0.2.0.jar \
-  -DgroupId=com.amazonaws.samples \
-  -DartifactId=movie-service-utils \
-  -Dversion=0.2.0 \
-  -Dpackaging=jar
-```
+# Run the application locally
+./gradlew bootRun
 
-### For Java 21 Version
-```bash
-mvn install:install-file \
-  -Dfile=./movie-service-utils/built-library/0_3_0/movie-service-utils-0.3.0.jar \
-  -DgroupId=com.amazonaws.samples \
-  -DartifactId=movie-service-utils \
-  -Dversion=0.3.0 \
-  -Dpackaging=jar
+# Run tests
+./gradlew test
+
+# Create distribution JAR
+./gradlew bootJar
 ```
 
 ## **Local**

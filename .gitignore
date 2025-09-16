@@ -7,6 +7,18 @@
 .settings/
 /movie-service-utils/jars/
 
+# Gradle build directories and files
+build/
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+!gradlew
+!gradlew.bat
+
+# Maven build directories (legacy)
+target/
+
 # Packaged files #
 #*.jar
 *.war

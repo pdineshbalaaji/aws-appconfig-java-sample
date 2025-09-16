@@ -6,10 +6,10 @@ on:
       - 'Q-TRANSFORM-issue-*'
 
 env:
-   MAVEN_CLI_OPTS: >-
-     -Djava.version=${{ contains(github.event.head_commit.message, 'Code transformation completed') && '17' || '1.8' }}
-     -Dmaven.compiler.source=${{ contains(github.event.head_commit.message, 'Code transformation completed') && '17' || '1.8' }}
-     -Dmaven.compiler.target=${{ contains(github.event.head_commit.message, 'Code transformation completed') && '17' || '1.8' }}
+   GRADLE_OPTS: >-
+     -Dorg.gradle.daemon=false
+     -Dorg.gradle.caching=true
+     -Dorg.gradle.parallel=true
 
 jobs:
   q-code-transformation:
@@ -21,42 +21,36 @@ jobs:
           java-version: ${{ contains(github.event.head_commit.message, 'Code transformation completed') && '17' || '8' }}
           distribution: 'temurin'
 
-      - name: Cache Maven dependencies
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-      - name: Install movie-service-utils dependency
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build movie-service-utils module
         run: |
-          echo "Installing both versions of movie-service-utils JAR to local Maven repository..."
-          # Install Java 8 version
-          mvn install:install-file \
-            -Dfile=./movie-service-utils/built-library/0_1_0/movie-service-utils-0.1.0.jar \
-            -DgroupId=com.amazonaws.samples \
-            -DartifactId=movie-service-utils \
-            -Dversion=0.1.0 \
-            -Dpackaging=jar
-          
-          # # Install Java 17 version
-          # mvn install:install-file \
-          #   -Dfile=./movie-service-utils/built-library/0_2_0/movie-service-utils-0.2.0.jar \
-          #   -DgroupId=com.amazonaws.samples \
-          #   -DartifactId=movie-service-utils \
-          #   -Dversion=0.2.0 \
-          #   -Dpackaging=jar
+          echo "Building movie-service-utils module..."
+          ./gradlew :movie-service-utils:build --no-daemon --stacktrace
 
       - name: Build and copy dependencies
         run: |
-          mvn ${{ env.MAVEN_CLI_OPTS }} verify
-          mvn ${{ env.MAVEN_CLI_OPTS }} dependency:copy-dependencies -DoutputDirectory=dependencies -Dmdep.useRepositoryLayout=true -Dmdep.copyPom=true -Dmdep.addParentPoms=true
+          ./gradlew build --no-daemon --stacktrace
+          ./gradlew copyDependencies --no-daemon --stacktrace
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: q-code-transformation-dependencies
-          path: dependencies
+          path: |
+            dependencies
+            build/libs
 
       - name: Debug information
         if: failure()
@@ -64,7 +58,7 @@ jobs:
           echo "Branch: ${{ github.ref_name }}"
           echo "Commit message: ${{ github.event.head_commit.message }}"
           echo "Java version logic result: ${{ contains(github.event.head_commit.message, 'Code transformation completed') && '17' || '8' }}"
-          echo "Local Maven repository contents:"
-          find ~/.m2/repository/com/amazonaws/samples -name "*.jar" 2>/dev/null || echo "No movie-service-utils found in local repo"
+          echo "Gradle cache contents:"
+          find ~/.gradle/caches -name "*.jar" | head -10 2>/dev/null || echo "No cached JARs found"
           java -version
-          mvn -version
+          ./gradlew --version
